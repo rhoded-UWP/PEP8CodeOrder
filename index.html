@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python Program Order Challenge</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1220;
+    --card-bg: #1a1e33;
+    --card-border: #2a2f4a;
+    --text: #e6e8f0;
+    --text-dim: #9aa0b8;
+    --accent: #7c9eff;
+    --success: #4ade80;
+    --error: #f87171;
+    --code-bg: #12152a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  body { padding: 1rem; }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-size: 1.65rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    margin-top: 0.15rem;
+  }
+
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 5rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-top: 0.1rem;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  button {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.6rem 1.25rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.1s ease, background 0.15s ease, opacity 0.15s ease;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0f1220;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #95b2ff;
+    transform: translateY(-1px);
+  }
+
+  .btn-success {
+    background: var(--success);
+    color: #0f1220;
+  }
+  .btn-success:hover:not(:disabled) {
+    background: #6ef098;
+    transform: translateY(-1px);
+  }
+
+  button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .message {
+    min-height: 2.4rem;
+    text-align: center;
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    font-size: 0.95rem;
+  }
+
+  .message.visible { opacity: 1; }
+
+  .message.success {
+    background: rgba(74, 222, 128, 0.1);
+    color: var(--success);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+  }
+
+  .message.hint {
+    background: rgba(124, 158, 255, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(124, 158, 255, 0.4);
+  }
+
+  .cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+  }
+
+  .card {
+    position: relative;
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    border-radius: 10px;
+    padding: 0.7rem 0.9rem;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+  }
+
+  .card.draggable {
+    cursor: grab;
+  }
+
+  .card.draggable:hover {
+    border-color: var(--accent);
+  }
+
+  .card.dragging {
+    opacity: 0.35;
+    cursor: grabbing;
+  }
+
+  /* Yellow drop-line indicators */
+  .card.drop-above::before,
+  .card.drop-below::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #fbbf24;
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.7);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .card.drop-above::before { top: -7px; }
+  .card.drop-below::after { bottom: -7px; }
+
+  /* Little rounded caps on the ends of the drop line */
+  .card.drop-above::before,
+  .card.drop-below::after {
+    background:
+      radial-gradient(circle at 0 50%, #fbbf24 4px, transparent 4px),
+      radial-gradient(circle at 100% 50%, #fbbf24 4px, transparent 4px),
+      #fbbf24;
+  }
+
+  .card.correct {
+    border-color: var(--success);
+    background: rgba(74, 222, 128, 0.08);
+  }
+
+  .card.incorrect {
+    border-color: var(--error);
+    background: rgba(248, 113, 113, 0.08);
+  }
+
+  .drag-handle {
+    color: var(--text-dim);
+    font-size: 1.1rem;
+    padding-top: 0.45rem;
+    user-select: none;
+    letter-spacing: -2px;
+  }
+
+  .card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .card-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .card-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    background: var(--code-bg);
+    padding: 0.55rem 0.75rem;
+    border-radius: 6px;
+    white-space: pre;
+    overflow-x: auto;
+    color: #d4d4d8;
+    line-height: 1.45;
+  }
+
+  .card-arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .arrow-btn {
+    background: var(--code-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    min-width: 1.75rem;
+  }
+
+  .arrow-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .footer-hint {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  /* Syntax highlighting */
+  .tok-comment { color: #7c8597; font-style: italic; }
+  .tok-keyword { color: #c084fc; }
+  .tok-string { color: #fbbf77; }
+  .tok-builtin { color: #7cc4ff; }
+  .tok-constant { color: #4fd1ff; }
+  .tok-number { color: #a5e075; }
+
+  @media (max-width: 500px) {
+    h1 { font-size: 1.3rem; }
+    .stat-value { font-size: 1.15rem; }
+    .card-code { font-size: 0.78rem; }
+    .hud { padding: 0.6rem 0.85rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Python Program Order Challenge</h1>
+    <p class="subtitle">Drag the code blocks into proper program order, then race to beat your best time.</p>
+  </header>
+
+  <div class="hud">
+    <div class="stat">
+      <span class="stat-label">Time</span>
+      <span class="stat-value" id="timer">0:00.0</span>
+    </div>
+    <div class="buttons">
+      <button class="btn-primary" id="start-btn">Start</button>
+      <button class="btn-success" id="check-btn" disabled>Check</button>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Best</span>
+      <span class="stat-value" id="best">--:--</span>
+    </div>
+  </div>
+
+  <div class="message" id="message"></div>
+
+  <div class="cards-container" id="cards"></div>
+
+  <p class="footer-hint">Drag cards to reorder, or use the up and down arrows.</p>
+</div>
+
+<script>
+// URL parameter scaling for Canvas embedding
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const scale = parseFloat(params.get('scale'));
+  if (!isNaN(scale) && scale > 0 && scale !== 1) {
+    document.body.style.zoom = scale;
+  }
+})();
+
+// The correct PEP 8 / best-practice order for a Python program
+const CORRECT_ORDER = [
+  {
+    id: 'comments',
+    label: 'Module-Level Comments',
+    code: `# name.py
+# Purpose: Greet the user by name
+# Author: CS 1430 Student`
+  },
+  {
+    id: 'imports',
+    label: 'Import Statements',
+    code: `import sys
+from datetime import datetime`
+  },
+  {
+    id: 'constants',
+    label: 'Constants',
+    code: `GREETING = "Hello"
+EXIT_MESSAGE = "Goodbye!"`
+  },
+  {
+    id: 'helpers',
+    label: 'Helper Functions',
+    code: `def get_name():
+    """Prompt for the user's name."""
+    return input("Enter your name: ")`
+  },
+  {
+    id: 'main',
+    label: 'The main() Function',
+    code: `def main():
+    name = get_name()
+    print(f"{GREETING}, {name}!")
+    print(EXIT_MESSAGE)`
+  },
+  {
+    id: 'entrypoint',
+    label: 'Program Entry Point',
+    code: `if __name__ == '__main__':
+    main()`
+  }
+];
+
+// Simple Python tokenizer for syntax highlighting
+function highlightCode(code) {
+  const KEYWORDS = new Set(['import', 'from', 'def', 'if', 'return', 'True', 'False', 'None', 'in', 'not', 'and', 'or', 'as', 'for', 'while', 'else', 'elif', 'class']);
+  const BUILTINS = new Set(['input', 'print', 'len', 'range', 'str', 'int', 'float', 'list', 'dict', 'set', 'tuple']);
+
+  const tokens = [];
+  let i = 0;
+
+  const escape = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  while (i < code.length) {
+    const ch = code[i];
+
+    // Comment
+    if (ch === '#') {
+      let j = code.indexOf('\n', i);
+      if (j === -1) j = code.length;
+      tokens.push(`<span class="tok-comment">${escape(code.slice(i, j))}</span>`);
+      i = j;
+      continue;
+    }
+
+    // Triple-quoted strings
+    if (code.slice(i, i + 3) === '"""' || code.slice(i, i + 3) === "'''") {
+      const quote = code.slice(i, i + 3);
+      const start = i;
+      i += 3;
+      while (i < code.length && code.slice(i, i + 3) !== quote) i++;
+      i += 3;
+      tokens.push(`<span class="tok-string">${escape(code.slice(start, i))}</span>`);
+      continue;
+    }
+
+    // f-string or regular double/single quoted string
+    if (ch === '"' || ch === "'" || (ch === 'f' && (code[i + 1] === '"' || code[i + 1] === "'"))) {
+      const start = i;
+      if (ch === 'f') i++;
+      const quote = code[i];
+      i++;
+      while (i < code.length && code[i] !== quote) {
+        if (code[i] === '\\' && i + 1 < code.length) i += 2;
+        else i++;
+      }
+      i++;
+      tokens.push(`<span class="tok-string">${escape(code.slice(start, i))}</span>`);
+      continue;
+    }
+
+    // Numbers
+    if (/[0-9]/.test(ch)) {
+      let j = i;
+      while (j < code.length && /[0-9.]/.test(code[j])) j++;
+      tokens.push(`<span class="tok-number">${escape(code.slice(i, j))}</span>`);
+      i = j;
+      continue;
+    }
+
+    // Identifiers / words
+    if (/[a-zA-Z_]/.test(ch)) {
+      let j = i;
+      while (j < code.length && /[a-zA-Z0-9_]/.test(code[j])) j++;
+      const word = code.slice(i, j);
+      const escaped = escape(word);
+      if (KEYWORDS.has(word)) {
+        tokens.push(`<span class="tok-keyword">${escaped}</span>`);
+      } else if (BUILTINS.has(word)) {
+        tokens.push(`<span class="tok-builtin">${escaped}</span>`);
+      } else if (/^__\w+__$/.test(word)) {
+        tokens.push(`<span class="tok-constant">${escaped}</span>`);
+      } else if (/^[A-Z][A-Z0-9_]*$/.test(word) && word.length > 1) {
+        tokens.push(`<span class="tok-constant">${escaped}</span>`);
+      } else {
+        tokens.push(escaped);
+      }
+      i = j;
+      continue;
+    }
+
+    // Everything else
+    tokens.push(escape(ch));
+    i++;
+  }
+
+  return tokens.join('');
+}
+
+// Game state
+let currentOrder = [];
+let startTime = 0;
+let timerInterval = null;
+let bestTime = null;
+let gameActive = false;
+let gameWon = false;
+let draggedIdx = null;
+
+const cardsEl = document.getElementById('cards');
+const startBtn = document.getElementById('start-btn');
+const checkBtn = document.getElementById('check-btn');
+const timerEl = document.getElementById('timer');
+const bestEl = document.getElementById('best');
+const messageEl = document.getElementById('message');
+
+function shuffleArray(source) {
+  const arr = [...source];
+  let attempts = 0;
+  do {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    attempts++;
+  } while (attempts < 10 && arr.every((item, idx) => item.id === CORRECT_ORDER[idx].id));
+  return arr;
+}
+
+function formatTime(ms) {
+  const totalSec = ms / 1000;
+  const min = Math.floor(totalSec / 60);
+  const sec = Math.floor(totalSec % 60);
+  const tenths = Math.floor((ms % 1000) / 100);
+  return `${min}:${sec.toString().padStart(2, '0')}.${tenths}`;
+}
+
+function startTimer() {
+  startTime = Date.now();
+  timerEl.textContent = '0:00.0';
+  timerInterval = setInterval(() => {
+    timerEl.textContent = formatTime(Date.now() - startTime);
+  }, 100);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+function renderCards() {
+  cardsEl.innerHTML = '';
+  currentOrder.forEach((item, idx) => {
+    const card = document.createElement('div');
+    const interactive = gameActive && !gameWon;
+    card.className = 'card' + (interactive ? ' draggable' : '');
+    card.draggable = interactive;
+    card.dataset.idx = idx;
+    card.dataset.id = item.id;
+
+    card.innerHTML = `
+      <span class="drag-handle">\u22EE\u22EE</span>
+      <div class="card-content">
+        <span class="card-label">${item.label}</span>
+        <pre class="card-code">${highlightCode(item.code)}</pre>
+      </div>
+      <div class="card-arrows">
+        <button class="arrow-btn up-btn" ${idx === 0 || !interactive ? 'disabled' : ''} aria-label="Move up">&#9650;</button>
+        <button class="arrow-btn down-btn" ${idx === currentOrder.length - 1 || !interactive ? 'disabled' : ''} aria-label="Move down">&#9660;</button>
+      </div>
+    `;
+
+    if (interactive) {
+      addDragListeners(card);
+      const upBtn = card.querySelector('.up-btn');
+      const downBtn = card.querySelector('.down-btn');
+      upBtn.addEventListener('click', (e) => { e.stopPropagation(); moveCard(idx, -1); });
+      downBtn.addEventListener('click', (e) => { e.stopPropagation(); moveCard(idx, 1); });
+      upBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+      downBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+    }
+
+    cardsEl.appendChild(card);
+  });
+}
+
+function moveCard(fromIdx, delta) {
+  const newIdx = fromIdx + delta;
+  if (newIdx < 0 || newIdx >= currentOrder.length) return;
+  [currentOrder[fromIdx], currentOrder[newIdx]] = [currentOrder[newIdx], currentOrder[fromIdx]];
+  renderCards();
+}
+
+function clearDropIndicators() {
+  document.querySelectorAll('.card').forEach((c) => {
+    c.classList.remove('drop-above', 'drop-below');
+  });
+}
+
+function getDropPosition(card, clientY) {
+  const rect = card.getBoundingClientRect();
+  const midpoint = rect.top + rect.height / 2;
+  return clientY < midpoint ? 'before' : 'after';
+}
+
+function addDragListeners(card) {
+  card.addEventListener('dragstart', (e) => {
+    draggedIdx = parseInt(card.dataset.idx);
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(draggedIdx));
+  });
+
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    clearDropIndicators();
+    draggedIdx = null;
+  });
+
+  card.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedIdx === null) return;
+
+    const targetIdx = parseInt(card.dataset.idx);
+    const position = getDropPosition(card, e.clientY);
+
+    // Skip indicator for no-op moves (dropping to your own neighbor-edge)
+    const isNoOp =
+      targetIdx === draggedIdx ||
+      (position === 'before' && targetIdx === draggedIdx + 1) ||
+      (position === 'after' && targetIdx === draggedIdx - 1);
+
+    clearDropIndicators();
+    if (!isNoOp) {
+      card.classList.add(position === 'before' ? 'drop-above' : 'drop-below');
+    }
+  });
+
+  card.addEventListener('dragleave', (e) => {
+    // Only clear if we actually left the card (not just moved over a child)
+    if (!card.contains(e.relatedTarget)) {
+      card.classList.remove('drop-above', 'drop-below');
+    }
+  });
+
+  card.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (draggedIdx === null) return;
+
+    const targetIdx = parseInt(card.dataset.idx);
+    const position = getDropPosition(card, e.clientY);
+    clearDropIndicators();
+
+    if (targetIdx === draggedIdx) return;
+
+    // Remove the dragged card first
+    const [moved] = currentOrder.splice(draggedIdx, 1);
+
+    // Adjust target index if the removal shifted it
+    let adjustedTarget = targetIdx;
+    if (draggedIdx < targetIdx) adjustedTarget -= 1;
+
+    const insertIdx = position === 'after' ? adjustedTarget + 1 : adjustedTarget;
+    currentOrder.splice(insertIdx, 0, moved);
+    renderCards();
+  });
+}
+
+function showMessage(text, type) {
+  messageEl.textContent = text;
+  messageEl.className = `message visible ${type}`;
+}
+
+function hideMessage() {
+  messageEl.className = 'message';
+  messageEl.textContent = '';
+}
+
+function startGame() {
+  currentOrder = shuffleArray(CORRECT_ORDER);
+  gameActive = true;
+  gameWon = false;
+  startBtn.textContent = 'Restart';
+  checkBtn.disabled = false;
+  hideMessage();
+  renderCards();
+  stopTimer();
+  startTimer();
+}
+
+function checkOrder() {
+  if (!gameActive || gameWon) return;
+
+  const allCorrect = currentOrder.every((item, idx) => item.id === CORRECT_ORDER[idx].id);
+
+  if (allCorrect) {
+    stopTimer();
+    const elapsed = Date.now() - startTime;
+    gameWon = true;
+    gameActive = false;
+    checkBtn.disabled = true;
+
+    document.querySelectorAll('.card').forEach((c) => {
+      c.classList.add('correct');
+      c.draggable = false;
+      c.classList.remove('draggable');
+    });
+
+    let msg = `Nice work! Finished in ${formatTime(elapsed)}.`;
+    if (bestTime === null || elapsed < bestTime) {
+      bestTime = elapsed;
+      bestEl.textContent = formatTime(bestTime);
+      msg += ' New best time!';
+    }
+    showMessage(msg, 'success');
+    startBtn.textContent = 'Play Again';
+    return;
+  }
+
+  // Partial feedback: flash correct vs. incorrect positions
+  const cards = document.querySelectorAll('.card');
+  const numCorrect = currentOrder.filter((item, idx) => item.id === CORRECT_ORDER[idx].id).length;
+
+  cards.forEach((card, idx) => {
+    if (currentOrder[idx].id === CORRECT_ORDER[idx].id) {
+      card.classList.add('correct');
+    } else {
+      card.classList.add('incorrect');
+    }
+  });
+
+  showMessage(`${numCorrect} of ${currentOrder.length} in the right spot. You've got this, keep going!`, 'hint');
+
+  setTimeout(() => {
+    cards.forEach((c) => c.classList.remove('correct', 'incorrect'));
+  }, 1100);
+}
+
+// Initial state: show cards in correct order as a reference before the timer starts
+currentOrder = [...CORRECT_ORDER];
+renderCards();
+
+startBtn.addEventListener('click', startGame);
+checkBtn.addEventListener('click', checkOrder);
+</script>
+</body>
+</html>
